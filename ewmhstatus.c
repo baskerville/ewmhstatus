@@ -68,7 +68,7 @@ double text_width(char *s)
 
 void copy_prop(char *dest, char *src, int len, int idx, int num_itm)
 {
-    if (num_itm < 2) {
+    if (num_itm <= 1) {
         strncpy(dest, src, len);
         dest[len] = '\0';
     } else {
@@ -77,7 +77,7 @@ void copy_prop(char *dest, char *src, int len, int idx, int num_itm)
             pos += strlen(src + pos) + 1;
             cnt++;
         }
-        if (cnt < idx)
+        if (cnt == (num_itm - 1))
             copy_prop(dest, src + pos, len - pos, 0, 1);
         else
             strcpy(dest, src + pos);

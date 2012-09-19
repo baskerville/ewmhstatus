@@ -62,7 +62,6 @@ double text_width(char *s)
     w = te.x_advance;
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
-    /* fprintf(stderr, "%s\n", cairo_status_to_string(cairo_status(cr))); */
     return w;
 }
 
@@ -135,11 +134,10 @@ void update_desktop_name(void)
 {
     xcb_ewmh_get_utf8_strings_reply_t names;
 
-    if (xcb_ewmh_get_desktop_names_reply(ewmh, xcb_ewmh_get_desktop_names(ewmh, default_screen), &names, NULL) == 1) {
+    if (xcb_ewmh_get_desktop_names_reply(ewmh, xcb_ewmh_get_desktop_names(ewmh, default_screen), &names, NULL) == 1)
         copy_prop(desktop_name, names.strings, names.strings_len, cur_desktop, num_desktops);
-    } else {
+    else
         strcpy(desktop_name, NO_VALUE);
-    }
 }
 
 void output_infos(void)
@@ -189,9 +187,8 @@ void handle_event(xcb_generic_event_t *evt)
 
 void register_events(void)
 {
-    xcb_generic_error_t *err;
     uint32_t values[] = {XCB_EVENT_MASK_PROPERTY_CHANGE};
-    err = xcb_request_check(dpy, xcb_change_window_attributes_checked(dpy, screen->root, XCB_CW_EVENT_MASK, values));
+    xcb_generic_error_t *err = xcb_request_check(dpy, xcb_change_window_attributes_checked(dpy, screen->root, XCB_CW_EVENT_MASK, values));
     if (err != NULL)
         running = false;
 }

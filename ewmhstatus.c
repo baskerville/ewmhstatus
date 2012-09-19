@@ -125,9 +125,7 @@ void update_window_title(void)
             xcb_change_window_attributes(dpy, cur_win, XCB_CW_EVENT_MASK, values_reset);
             cur_win = win;
         }
-        xcb_generic_error_t *err = xcb_request_check(dpy, xcb_change_window_attributes_checked(dpy, win, XCB_CW_EVENT_MASK, values));
-        if (err != NULL)
-            running = false;
+       xcb_change_window_attributes(dpy, win, XCB_CW_EVENT_MASK, values);
     } else {
         strcpy(window_title, NO_VALUE);
     }
@@ -222,9 +220,9 @@ int main(int argc, char *argv[])
 {
     fd_set descriptors;
     xcb_generic_event_t *evt;
-    /* signal(SIGTERM, handle_signal); */
-    /* signal(SIGINT, handle_signal); */
-    /* signal(SIGHUP, handle_signal); */
+    signal(SIGTERM, handle_signal);
+    signal(SIGINT, handle_signal);
+    signal(SIGHUP, handle_signal);
     setup();
     register_events();
     update_num_desktops();

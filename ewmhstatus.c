@@ -29,7 +29,7 @@ typedef enum {
 } bool;
 
 xcb_connection_t *dpy;
-xcb_ewmh_connection_t ewmh;
+xcb_ewmh_connection_t *ewmh;
 xcb_screen_t *screen;
 int default_screen;
 xcb_window_t cur_win;
@@ -92,12 +92,12 @@ void handle_signal(int sig)
 
 void update_cur_desktop(void)
 {
-    xcb_ewmh_get_current_desktop_reply(&ewmh, xcb_ewmh_get_current_desktop(&ewmh, default_screen), &cur_desktop, NULL);
+    xcb_ewmh_get_current_desktop_reply(ewmh, xcb_ewmh_get_current_desktop(ewmh, default_screen), &cur_desktop, NULL);
 }
 
 void update_num_desktops(void)
 {
-    xcb_ewmh_get_number_of_desktops_reply(&ewmh, xcb_ewmh_get_number_of_desktops(&ewmh, default_screen), &num_desktops, NULL);
+    xcb_ewmh_get_number_of_desktops_reply(ewmh, xcb_ewmh_get_number_of_desktops(ewmh, default_screen), &num_desktops, NULL);
 }
 
 void update_window_title(void)
@@ -111,8 +111,8 @@ void update_window_title(void)
     ewmh_txt_prop.strings = NULL;
     icccm_txt_prop.name = NULL;
 
-    if (xcb_ewmh_get_active_window_reply(&ewmh, xcb_ewmh_get_active_window(&ewmh, default_screen), &win, NULL) == 1
-            && (xcb_ewmh_get_wm_name_reply(&ewmh, xcb_ewmh_get_wm_name(&ewmh, win), &ewmh_txt_prop, NULL) == 1
+    if (xcb_ewmh_get_active_window_reply(ewmh, xcb_ewmh_get_active_window(ewmh, default_screen), &win, NULL) == 1
+            && (xcb_ewmh_get_wm_name_reply(ewmh, xcb_ewmh_get_wm_name(ewmh, win), &ewmh_txt_prop, NULL) == 1
                 || xcb_icccm_get_wm_name_reply(dpy, xcb_icccm_get_wm_name(dpy, win), &icccm_txt_prop, NULL) == 1)) {
         if (ewmh_txt_prop.strings != NULL && ewmh_txt_prop.strings_len > 0) {
             copy_prop(window_title, ewmh_txt_prop.strings, ewmh_txt_prop.strings_len, 0, 1);
@@ -135,7 +135,7 @@ void update_desktop_name(void)
 {
     xcb_ewmh_get_utf8_strings_reply_t names;
 
-    if (xcb_ewmh_get_desktop_names_reply(&ewmh, xcb_ewmh_get_desktop_names(&ewmh, default_screen), &names, NULL) == 1) {
+    if (xcb_ewmh_get_desktop_names_reply(ewmh, xcb_ewmh_get_desktop_names(ewmh, default_screen), &names, NULL) == 1) {
         copy_prop(desktop_name, names.strings, names.strings_len, cur_desktop, num_desktops);
     } else {
         strcpy(desktop_name, NO_VALUE);
@@ -166,18 +166,18 @@ void handle_event(xcb_generic_event_t *evt)
     switch (XCB_EVENT_RESPONSE_TYPE(evt)) {
         case XCB_PROPERTY_NOTIFY:
             pne = (xcb_property_notify_event_t *) evt;
-            if (pne->atom == ewmh._NET_DESKTOP_NAMES) {
+            if (pne->atom == ewmh->_NET_DESKTOP_NAMES) {
                 update_desktop_name();
                 output_infos();
-            } else if (pne->atom == ewmh._NET_ACTIVE_WINDOW) {
+            } else if (pne->atom == ewmh->_NET_ACTIVE_WINDOW) {
                 update_window_title();
                 output_infos();
-            } else if (pne->window != screen->root && (pne->atom == ewmh._NET_WM_NAME || pne->atom == XCB_ATOM_WM_NAME)) {
+            } else if (pne->window != screen->root && (pne->atom == ewmh->_NET_WM_NAME || pne->atom == XCB_ATOM_WM_NAME)) {
                 update_window_title();
                 output_infos();
-            } else if (pne->atom == ewmh._NET_NUMBER_OF_DESKTOPS) {
+            } else if (pne->atom == ewmh->_NET_NUMBER_OF_DESKTOPS) {
                 update_num_desktops();
-            } else if (pne->atom == ewmh._NET_CURRENT_DESKTOP) {
+            } else if (pne->atom == ewmh->_NET_CURRENT_DESKTOP) {
                 update_cur_desktop();
                 update_desktop_name();
                 output_infos();
@@ -199,10 +199,10 @@ void register_events(void)
 void setup(void)
 {
     dpy = xcb_connect(NULL, &default_screen);
-    xcb_intern_atom_cookie_t *ewmh_cookies;
-    ewmh_cookies = xcb_ewmh_init_atoms(dpy, &ewmh);
-    xcb_ewmh_init_atoms_replies(&ewmh, ewmh_cookies, NULL);
-    screen = ewmh.screens[default_screen];
+    ewmh = malloc(sizeof(xcb_ewmh_connection_t));
+    xcb_intern_atom_cookie_t *ewmh_cookies = xcb_ewmh_init_atoms(dpy, ewmh);
+    xcb_ewmh_init_atoms_replies(ewmh, ewmh_cookies, NULL);
+    screen = ewmh->screens[default_screen];
     screen_width = screen->width_in_pixels;
     fifo_path = getenv(FIFO_ENV_VAR);
     /* http://www.outflux.net/blog/archives/2008/03/09/using-select-on-a-fifo/ */
@@ -266,6 +266,8 @@ int main(int argc, char *argv[])
     }
 
     close(fifo_fd);
+    xcb_ewmh_connection_wipe(ewmh);
+    free(ewmh);
     xcb_disconnect(dpy);
     return 0;
 }

@@ -222,9 +222,9 @@ int main(int argc, char *argv[])
 {
     fd_set descriptors;
     xcb_generic_event_t *evt;
-    signal(SIGTERM, handle_signal);
-    signal(SIGINT, handle_signal);
-    signal(SIGHUP, handle_signal);
+    /* signal(SIGTERM, handle_signal); */
+    /* signal(SIGINT, handle_signal); */
+    /* signal(SIGHUP, handle_signal); */
     setup();
     register_events();
     update_num_desktops();

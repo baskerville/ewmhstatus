@@ -124,7 +124,9 @@ void update_window_title(void)
             xcb_change_window_attributes(dpy, cur_win, XCB_CW_EVENT_MASK, values_reset);
             cur_win = win;
         }
-       xcb_change_window_attributes(dpy, win, XCB_CW_EVENT_MASK, values);
+        xcb_generic_error_t *err = xcb_request_check(dpy, xcb_change_window_attributes_checked(dpy, win, XCB_CW_EVENT_MASK, values));
+        if (err != NULL)
+            fprintf(stderr, "could not capture property change events on window 0x%X\n", win);
     } else {
         strcpy(window_title, NO_VALUE);
     }
@@ -150,7 +152,7 @@ void output_infos(void)
     int left_pos = horiz_padding;
     int right_pos = screen_width - right_width - horiz_padding;
     int center_pos = left_width + 2 * horiz_padding + (available_center / 2) - (center_width / 2);
-    
+
     if (center_width > available_center)
         center_pos = left_width + 2 * horiz_padding;
 

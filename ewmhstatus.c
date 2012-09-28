@@ -15,9 +15,9 @@
 #include "ewmhstatus.h"
 
 #define MAX(A, B)         ((A) > (B) ? (A) : (B))
+#define MIN(A, B)         ((A) > (B) ? (B) : (A))
 
 #define FIFO_ENV_VAR   "EWMHSTATUS_FIFO"
-#define MAX_LEN        256
 #define NO_VALUE       " "
 #define FONT_FAMILY    "sans-serif"
 #define FONT_SIZE      11
@@ -38,11 +38,11 @@ uint16_t screen_width;
 unsigned int horiz_padding = HORIZ_PADDING;
 unsigned int cur_desktop, num_desktops;
 
-char desktop_name[MAX_LEN] = NO_VALUE;
-char window_title[MAX_LEN] = NO_VALUE;
-char external_infos[MAX_LEN] = NO_VALUE;
+char desktop_name[BUFSIZ] = NO_VALUE;
+char window_title[BUFSIZ] = NO_VALUE;
+char external_infos[BUFSIZ] = NO_VALUE;
 
-char font_family[MAX_LEN] = FONT_FAMILY;
+char font_family[BUFSIZ] = FONT_FAMILY;
 int font_size = FONT_SIZE;
 
 char *fifo_path;
@@ -68,7 +68,7 @@ double text_width(char *s)
 void copy_prop(char *dest, char *src, int len, int idx, int num_itm)
 {
     if (num_itm <= 1) {
-        strncpy(dest, src, len);
+        strncpy(dest, src, MIN(len, BUFSIZ - 1));
         dest[len] = '\0';
     } else {
         int pos = 0, cnt = 0;
@@ -79,7 +79,7 @@ void copy_prop(char *dest, char *src, int len, int idx, int num_itm)
         if (cnt == (num_itm - 1))
             copy_prop(dest, src + pos, len - pos, 0, 1);
         else
-            strcpy(dest, src + pos);
+            strncpy(dest, src + pos, BUFSIZ - 1);
     }
 }
 

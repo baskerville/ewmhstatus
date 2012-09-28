@@ -16,9 +16,10 @@
 
 #define MAX(A, B)         ((A) > (B) ? (A) : (B))
 #define MIN(A, B)         ((A) > (B) ? (B) : (A))
+#define ABS(A, B)         ((A) > (B) ? (A - B) : (B - A))
 
 #define FIFO_ENV_VAR   "EWMHSTATUS_FIFO"
-#define NO_VALUE       " "
+#define MISSING_VALUE  " "
 #define FONT_FAMILY    "sans-serif"
 #define FONT_SIZE      11
 #define HORIZ_PADDING  9
@@ -38,9 +39,9 @@ uint16_t screen_width;
 unsigned int horiz_padding = HORIZ_PADDING;
 unsigned int cur_desktop, num_desktops;
 
-char desktop_name[BUFSIZ] = NO_VALUE;
-char window_title[BUFSIZ] = NO_VALUE;
-char external_infos[BUFSIZ] = NO_VALUE;
+char desktop_name[BUFSIZ] = MISSING_VALUE;
+char window_title[BUFSIZ] = MISSING_VALUE;
+char external_infos[BUFSIZ] = MISSING_VALUE;
 
 char font_family[BUFSIZ] = FONT_FAMILY;
 int font_size = FONT_SIZE;
@@ -63,6 +64,23 @@ double text_width(char *s)
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
     return w;
+}
+
+void truncate(char *s, double width, unsigned int lower, unsigned int upper)
+{
+    if (ABS(lower, upper) < 2) {
+        s[lower] = '\0';
+    } else {
+        unsigned int middle = (lower + upper) / 2;
+        char c = s[middle];
+        s[middle] = '\0';
+        double w = text_width(s);
+        s[middle] = c;
+        if (w < width)
+            truncate(s, width, middle, upper);
+        else
+            truncate(s, width, lower, middle);
+    }
 }
 
 void copy_prop(char *dest, char *src, int len, int idx, int num_itm)
@@ -118,7 +136,7 @@ void update_window_title(void)
         } else if (icccm_txt_prop.name != NULL && icccm_txt_prop.name_len > 0) {
             copy_prop(window_title, icccm_txt_prop.name, icccm_txt_prop.name_len, 0, 1);
         } else {
-            strcpy(window_title, NO_VALUE);
+            strcpy(window_title, MISSING_VALUE);
         }
         if (win != cur_win) {
             xcb_change_window_attributes(dpy, cur_win, XCB_CW_EVENT_MASK, values_reset);
@@ -128,7 +146,7 @@ void update_window_title(void)
         if (err != NULL)
             fprintf(stderr, "could not capture property change events on window 0x%X\n", win);
     } else {
-        strcpy(window_title, NO_VALUE);
+        strcpy(window_title, MISSING_VALUE);
     }
 }
 
@@ -139,7 +157,7 @@ void update_desktop_name(void)
     if (xcb_ewmh_get_desktop_names_reply(ewmh, xcb_ewmh_get_desktop_names(ewmh, default_screen), &names, NULL) == 1)
         copy_prop(desktop_name, names.strings, names.strings_len, cur_desktop, num_desktops);
     else
-        strcpy(desktop_name, NO_VALUE);
+        strcpy(desktop_name, MISSING_VALUE);
 }
 
 void output_infos(void)
@@ -149,12 +167,14 @@ void output_infos(void)
     double center_width = text_width(window_title);
     double available_center = screen_width - (left_width + right_width + 4 * horiz_padding);
 
-    int left_pos = horiz_padding;
-    int right_pos = screen_width - right_width - horiz_padding;
-    int center_pos = left_width + 2 * horiz_padding + (available_center / 2) - (center_width / 2);
+    if (center_width > available_center) {
+        truncate(window_title, available_center, 0, strlen(window_title) - 1);
+        center_width = text_width(window_title);
+    }
 
-    if (center_width > available_center)
-        center_pos = left_width + 2 * horiz_padding;
+    int left_pos = horiz_padding;
+    int right_pos = screen_width - horiz_padding - right_width;
+    int center_pos = left_width + 2 * horiz_padding + (available_center - center_width) / 2;
 
     printf("^pa(%i)%s^pa(%i)%s^pa(%i)%s\n", center_pos, window_title, right_pos, external_infos, left_pos, desktop_name);
     fflush(stdout);

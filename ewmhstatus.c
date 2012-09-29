@@ -86,7 +86,7 @@ void truncate(char *s, double width, unsigned int lower, unsigned int upper)
 void copy_prop(char *dest, char *src, int len, int idx, int num_itm)
 {
     if (num_itm <= 1) {
-        strncpy(dest, src, MIN(len, BUFSIZ - 1));
+        strncpy(dest, src, MIN(len, BUFSIZ));
         dest[len] = '\0';
     } else {
         int pos = 0, cnt = 0;
@@ -97,7 +97,7 @@ void copy_prop(char *dest, char *src, int len, int idx, int num_itm)
         if (cnt == (num_itm - 1))
             copy_prop(dest, src + pos, len - pos, 0, 1);
         else
-            strncpy(dest, src + pos, BUFSIZ - 1);
+            strncpy(dest, src + pos, BUFSIZ);
     }
 }
 

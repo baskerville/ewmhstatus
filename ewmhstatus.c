@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <string.h>
 #include <signal.h>
 #include <xcb/xcb.h>
@@ -23,11 +24,6 @@
 #define FONT_FAMILY    "sans-serif"
 #define FONT_SIZE      11
 #define HORIZ_PADDING  9
-
-typedef enum {
-    false,
-    true
-} bool;
 
 xcb_connection_t *dpy;
 xcb_ewmh_connection_t *ewmh;
@@ -66,7 +62,7 @@ double text_width(char *s)
     return w;
 }
 
-void truncate(char *s, double width, unsigned int lower, unsigned int upper)
+void truncate_text(char *s, double width, unsigned int lower, unsigned int upper)
 {
     if (ABS(lower, upper) < 2) {
         s[lower] = '\0';
@@ -77,9 +73,9 @@ void truncate(char *s, double width, unsigned int lower, unsigned int upper)
         double w = text_width(s);
         s[middle] = c;
         if (w < width)
-            truncate(s, width, middle, upper);
+            truncate_text(s, width, middle, upper);
         else
-            truncate(s, width, lower, middle);
+            truncate_text(s, width, lower, middle);
     }
 }
 
@@ -168,7 +164,7 @@ void output_infos(void)
     double available_center = screen_width - (left_width + right_width + 4 * horiz_padding);
 
     if (center_width > available_center) {
-        truncate(window_title, available_center, 0, strlen(window_title) - 1);
+        truncate_text(window_title, available_center, 0, strlen(window_title) - 1);
         center_width = text_width(window_title);
     }
 

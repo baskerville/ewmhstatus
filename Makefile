@@ -1,9 +1,9 @@
-VERSION = 0.01
+VERSION = 0.1
 
 CC      = gcc
-LIBS    = `pkg-config --libs xcb xcb-icccm xcb-ewmh cairo`
-CFLAGS  = -g -std=c99 -pedantic -Wall -Wextra
-LDFLAGS = $(LIBS)
+LIBS    = -lm -lxcb -lxcb-icccm -lxcb-ewmh -lcairo
+CFLAGS  = -g -std=c99 -pedantic -Wall -Wextra -I$(PREFIX)/include
+LDFLAGS = -L$(PREFIX)/lib
 
 PREFIX    ?= /usr/local
 BINPREFIX = $(PREFIX)/bin
@@ -19,6 +19,7 @@ options:
 	@echo "CC      = $(CC)"
 	@echo "CFLAGS  = $(CFLAGS)"
 	@echo "LDFLAGS = $(LDFLAGS)"
+	@echo "LIBS    = $(LIBS)"
 	@echo "PREFIX  = $(PREFIX)"
 
 .c.o:
@@ -27,14 +28,16 @@ options:
 
 ewmhstatus:   $(OBJ)
 	@echo CC -o $@
-	@$(CC) -o $@ $(OBJ) $(LDFLAGS)
+	@$(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 clean:
 	@echo "cleaning"
 	@rm -f $(OBJ) ewmhstatus
 
 install: all
 	@echo "installing executable files to $(DESTDIR)$(BINPREFIX)"
-	@install -D -m 755 ewmhstatus $(DESTDIR)$(BINPREFIX)/ewmhstatus
+	@mkdir -p "$(DESTDIR)$(BINPREFIX)"
+	@cp ewmhstatus "$(DESTDIR)$(BINPREFIX)"
+	@chmod 755 "$(DESTDIR)$(BINPREFIX)"/ewmhstatus
 
 uninstall:
 	@echo "removing executable files from $(DESTDIR)$(BINPREFIX)"

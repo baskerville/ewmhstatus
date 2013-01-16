@@ -12,7 +12,7 @@ SRC = ewmhstatus.c
 
 OBJ = $(SRC:.c=.o)
 
-all: options clean ewmhstatus
+all: options ewmhstatus
 
 options:
 	@echo "ewmhstatus build options:"

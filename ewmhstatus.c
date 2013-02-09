@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <signal.h>
+#include <ctype.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_event.h>
 #include <xcb/xcb_icccm.h>
@@ -274,6 +275,9 @@ int main(int argc, char *argv[])
                 int bytes = read(fifo_fd, external_infos, sizeof(external_infos));
                 if (bytes > 0) {
                     external_infos[bytes] = '\0';
+                    int i = bytes - 1;
+                    while (i > 0 && isspace(external_infos[i]))
+                        external_infos[i--] = '\0';
                     output_infos();
                 }
             }
